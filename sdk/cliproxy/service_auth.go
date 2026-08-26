@@ -2,6 +2,7 @@ package cliproxy
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"time"
 
@@ -197,7 +198,15 @@ func (s *Service) ensureWebsocketGateway() {
 		return
 	}
 	opts := wsrelay.Options{
-		Path:           "/v1/ws",
+		Path: "/v1/ws",
+		ProviderFactory: func(r *http.Request) (string, error) {
+			if r != nil && r.URL != nil {
+				if name := strings.TrimSpace(r.URL.Query().Get("aistudio_name")); name != "" {
+					return name, nil
+				}
+			}
+			return "", nil
+		},
 		OnConnected:    s.wsOnConnected,
 		OnDisconnected: s.wsOnDisconnected,
 		LogDebugf:      log.Debugf,
@@ -208,10 +217,7 @@ func (s *Service) ensureWebsocketGateway() {
 }
 
 func (s *Service) wsOnConnected(channelID string) {
-	if s == nil || channelID == "" {
-		return
-	}
-	if !strings.HasPrefix(strings.ToLower(channelID), "aistudio-") {
+	if s == nil || strings.TrimSpace(channelID) == "" {
 		return
 	}
 	if s.coreManager != nil {
