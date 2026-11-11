@@ -79,6 +79,7 @@ func rpcStreamError(message string, detail *pluginabi.Error) error {
 			message:           text,
 			statusCode:        detail.HTTPStatus,
 			retryAfterSeconds: detail.RetryAfterSeconds,
+			credentialScoped:  detail.CredentialScoped,
 		}
 	}
 	if message != "" {
@@ -192,10 +193,6 @@ func (s *streamBridgeStream) emit(ctx context.Context, chunk pluginapi.ExecutorS
 	case s.emits <- request:
 	}
 	return <-request.done
-}
-
-func (s *streamBridgeStream) close(errorMessage string) {
-	s.closeWithError(rpcStreamError(errorMessage, nil))
 }
 
 func (s *streamBridgeStream) closeWithError(err error) {
